@@ -23,6 +23,11 @@ dependencies = [
     "returns>=0.23.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/m0n0x41d/telegram-mcp"
 Repository = "https://github.com/m0n0x41d/telegram-mcp"

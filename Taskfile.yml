@@ -1,0 +1,26 @@
+version: "3"
+
+tasks:
+  install:
+    cmds:
+      - uv sync
+
+  install-pipx:
+    cmds:
+      - make install-pipx
+
+  init:
+    cmds:
+      - uv run telegram-mcp init
+
+  login:
+    cmds:
+      - uv run telegram-mcp login
+
+  doctor:
+    cmds:
+      - uv run telegram-mcp doctor
+
+  run:
+    cmds:
+      - uv run telegram-mcp run
