@@ -19,11 +19,30 @@ Built on [Telethon](https://github.com/LonamiWebs/Telethon) + [MCP Python SDK](h
 
 - Python **3.12+**
 - [`pipx`](https://pipx.pypa.io/) (or [`uv`](https://docs.astral.sh/uv/) for the `uvx` flow)
-- Telegram API credentials — create them at [my.telegram.org](https://my.telegram.org)
+- Telegram API credentials — see [Get API credentials](#get-api-credentials) below
 
 ---
 
-## Quick start (≈ 2 minutes)
+## Get API credentials
+
+This MCP is a **userbot** (acts on your personal Telegram account through MTProto/Telethon), not a `@BotFather` bot. Telegram requires every userbot to register an "app" and use its `api_id` + `api_hash`. **No way around this** — leaving them empty makes Telethon fail with `ValueError: Your API ID or Hash cannot be empty or None`.
+
+The good news: registering an app is free and takes ~2 minutes.
+
+1. Open **[https://my.telegram.org/auth](https://my.telegram.org/auth)** and log in with your phone (Telegram sends a code to your authorized device).
+2. Click **API development tools**.
+3. Fill in:
+   - **App title** — anything, e.g. `telegram-mcp`
+   - **Short name** — anything, e.g. `tg_mcp`
+   - **Platform** — pick whatever (Desktop is fine)
+   - **URL / Description** — leave blank
+4. Submit. The next page shows your **`api_id`** (number) and **`api_hash`** (32-char hex). Copy both.
+
+Keep them secret — anyone with these can impersonate your app (not your account, but Telegram may rate-limit/ban the app key if abused). `telegram-mcp init` stores them in `~/.telegram-mcp/config.env` with mode `0600`.
+
+---
+
+## Quick start (≈ 2 minutes after creds)
 
 ### 1. Install
 

@@ -54,7 +54,15 @@ def init() -> None:
             raise typer.Exit(code=1)
         existing = cfg.parse_env_file(cfg.CONFIG_FILE)
 
-    console.print("\nGet your API credentials at [link]https://my.telegram.org[/link]\n")
+    console.print(
+        "\n[bold]Telegram API credentials[/bold] are required — this is a userbot\n"
+        "(works from your personal account via MTProto), not a @BotFather bot.\n"
+        "Get them in ~2 minutes:\n"
+        "  1. Open [link=https://my.telegram.org/auth]https://my.telegram.org/auth[/link] and log in with your phone\n"
+        "  2. Click [bold]API development tools[/bold]\n"
+        "  3. Fill any [bold]App title[/bold] and [bold]Short name[/bold] (e.g. telegram-mcp) — leave the rest blank\n"
+        "  4. Copy [bold]api_id[/bold] and [bold]api_hash[/bold] from the result page\n"
+    )
     api_id = typer.prompt("TELEGRAM_API_ID", default=existing.get("TELEGRAM_API_ID", ""))
     api_hash = typer.prompt(
         "TELEGRAM_API_HASH",
@@ -73,6 +81,12 @@ def init() -> None:
         "TELEGRAM_PHONE": phone,
     })
     os.chmod(cfg.CONFIG_FILE, 0o600)
+
+    if not api_id or not api_hash:
+        console.print(
+            "\n[red]Note:[/red] TELEGRAM_API_ID and TELEGRAM_API_HASH are required by Telethon — "
+            "without them `telegram-mcp login` will fail with ValueError. Re-run `telegram-mcp init` once you have them."
+        )
 
     if _maybe_migrate_legacy_session():
         console.print(f"[green]Migrated legacy session →[/green] {cfg.DEFAULT_SESSION_PATH}.session")
