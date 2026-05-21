@@ -23,6 +23,7 @@ from telethon import TelegramClient
 
 from . import auth
 from .config import Config
+from .telethon_session import ConcurrentSQLiteSession
 from .types import (
     ConversionError,
     Identity,
@@ -46,7 +47,9 @@ async def open_session(config: Config) -> Result[TelegramSession, OpenError]:
             return Failure(err)
         case Success(identity):
             client = TelegramClient(
-                str(config.session_path), config.api_id, config.api_hash,
+                ConcurrentSQLiteSession(str(config.session_path)),
+                config.api_id,
+                config.api_hash,
             )
             await client.connect()
             return Success(TelegramSession(client=client, config=config, identity=identity))

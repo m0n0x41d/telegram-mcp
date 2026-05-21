@@ -20,6 +20,7 @@ from telethon.errors import SessionPasswordNeededError
 
 from . import wire
 from .config import Config
+from .telethon_session import ConcurrentSQLiteSession
 from .types import (
     ConversionError,
     Identity,
@@ -27,6 +28,11 @@ from .types import (
     Peer,
     PeerKind,
 )
+
+
+def _make_client(config: Config) -> TelegramClient:
+    session = ConcurrentSQLiteSession(str(config.session_path))
+    return TelegramClient(session, config.api_id, config.api_hash)
 
 
 @dataclass(frozen=True)
@@ -56,7 +62,7 @@ class PromptIO:
 
 async def check_authorization(config: Config) -> Result[Identity, NotAuthorized | ConversionError]:
     """Connect with the existing session; return Identity if authorized."""
-    client = TelegramClient(str(config.session_path), config.api_id, config.api_hash)
+    client = _make_client(config)
     await client.connect()
     try:
         if not await client.is_user_authorized():
@@ -77,7 +83,7 @@ async def login(config: Config, io: PromptIO) -> Result[Identity, LoginError]:
     if config.phone is None:
         return Failure(MissingPhone())
 
-    client = TelegramClient(str(config.session_path), config.api_id, config.api_hash)
+    client = _make_client(config)
     await client.connect()
     try:
         if await client.is_user_authorized():
