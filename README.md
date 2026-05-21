@@ -156,7 +156,8 @@ Values are resolved in this order, first hit wins:
 
 1. **Process environment variables** (set by the MCP client, your shell, etc.)
 2. **`~/.telegram-mcp/config.env`** (written by `telegram-mcp init`)
-3. **`./.env`** in the current working directory (legacy fallback for source checkouts)
+
+The current working directory is never consulted — `telegram-mcp` is a user-global CLI, not a per-project tool, so it never reads `./.env`.
 
 | Variable | Required | Default |
 |----------|----------|---------|

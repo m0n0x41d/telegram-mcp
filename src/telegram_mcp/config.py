@@ -1,6 +1,6 @@
 """Layer 4c: Configuration loading.
 
-Pure read of three sources, merged with documented precedence.
+Pure read of two sources, merged with documented precedence.
 No mutation of `os.environ` — the previous load_dotenv approach was a
 hidden global side-effect; here we read each source explicitly into our
 own Mapping and pick the first hit.
@@ -8,11 +8,16 @@ own Mapping and pick the first hit.
 Resolution order (first hit wins):
 1. Process environment variables
 2. ~/.telegram-mcp/config.env
-3. ./.env (legacy fallback)
+
+The CWD is never consulted — telegram-mcp is a user-global CLI, not a
+per-project tool. Reading `./.env` from arbitrary working directories
+leaks unrelated project secrets into telegram-mcp's process and breaks
+when `.env` is a directory.
 
 Inexpressible:
   - Telegram, Telethon, MCP concerns
   - mutation of process environment
+  - per-project / per-CWD configuration
 """
 
 from __future__ import annotations
@@ -48,7 +53,7 @@ class ConfigError:
 def parse_env_file(path: Path) -> dict[str, str]:
     """Read a `.env`-style file into a plain dict. No interpolation, no quoting magic
     beyond stripping outer single/double quotes."""
-    if not path.exists():
+    if not path.is_file():
         return {}
     out: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -81,15 +86,11 @@ def _resolve_session_path(value: str | None) -> Path:
 def load(*, require_phone: bool = False) -> Result[Config, ConfigError]:
     process_env: Mapping[str, str] = os.environ
     home_env = parse_env_file(CONFIG_FILE)
-    cwd_env = parse_env_file(Path.cwd() / ".env")
-    layers = (process_env, home_env, cwd_env)
+    layers = (process_env, home_env)
 
     sources: list[Path] = []
     if home_env:
         sources.append(CONFIG_FILE)
-    cwd_path = Path.cwd() / ".env"
-    if cwd_env:
-        sources.append(cwd_path)
 
     api_id_raw = _lookup("TELEGRAM_API_ID", layers)
     api_hash = _lookup("TELEGRAM_API_HASH", layers)
