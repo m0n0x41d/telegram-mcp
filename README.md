@@ -93,17 +93,30 @@ If everything is green you're done. Otherwise it tells you exactly what is missi
 
 ### 5. Wire it into your MCP client
 
-**Claude Code** — `.mcp.json`:
+Use the **absolute path** to the installed binary. Most MCP hosts (Claude Desktop GUI, Claude Code launched outside a login shell, etc.) don't inherit your shell `PATH`, and a bare `"command": "telegram-mcp"` then fails to spawn with a generic `-32000` error.
+
+Find it once:
+
+```bash
+which telegram-mcp
+# → /Users/<you>/.local/bin/telegram-mcp   (pipx default on macOS/Linux)
+```
+
+**Claude Code** — `.mcp.json` (project) or `~/.claude.json` → `mcpServers` (global):
 
 ```json
 {
   "mcpServers": {
-    "telegram": { "command": "telegram-mcp" }
+    "telegram": {
+      "command": "/Users/<you>/.local/bin/telegram-mcp"
+    }
   }
 }
 ```
 
-**Claude Desktop** — `claude_desktop_config.json`: identical block. If `telegram-mcp` isn't on the PATH the GUI app sees, replace `"telegram-mcp"` with the full path printed by `which telegram-mcp` (usually `~/.local/bin/telegram-mcp`).
+**Claude Desktop** — `claude_desktop_config.json`: identical block.
+
+> Tip: credentials live in `~/.telegram-mcp/config.env`, so you don't need to repeat `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` in `env` here. Only set `env` if you want to override a value for a specific client.
 
 ---
 
