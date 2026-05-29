@@ -20,7 +20,11 @@ from telethon.errors import SessionPasswordNeededError
 
 from . import wire
 from .config import Config
-from .telethon_session import ConcurrentSQLiteSession
+from .string_session import (
+    load_session_string,
+    make_string_session,
+    save_session_string,
+)
 from .types import (
     ConversionError,
     Identity,
@@ -30,9 +34,8 @@ from .types import (
 )
 
 
-def _make_client(config: Config) -> TelegramClient:
-    session = ConcurrentSQLiteSession(str(config.session_path))
-    return TelegramClient(session, config.api_id, config.api_hash)
+def _make_client(config: Config, session_str: str | None) -> TelegramClient:
+    return TelegramClient(make_string_session(session_str), config.api_id, config.api_hash)
 
 
 @dataclass(frozen=True)
@@ -61,8 +64,16 @@ class PromptIO:
 
 
 async def check_authorization(config: Config) -> Result[Identity, NotAuthorized | ConversionError]:
-    """Connect with the existing session; return Identity if authorized."""
-    client = _make_client(config)
+    """Connect with the existing session; return Identity if authorized.
+
+    Auto-migrates a legacy SQLite session on first read (see string_session
+    module). Returns NotAuthorized if no session blob exists or contains
+    no auth_key.
+    """
+    session_str = load_session_string(config.session_path)
+    if not session_str:
+        return Failure(NotAuthorized())
+    client = _make_client(config, session_str)
     await client.connect()
     try:
         if not await client.is_user_authorized():
@@ -79,14 +90,21 @@ async def check_authorization(config: Config) -> Result[Identity, NotAuthorized 
 
 
 async def login(config: Config, io: PromptIO) -> Result[Identity, LoginError]:
-    """Run the interactive sign-in flow. Persists session as a side-effect of Telethon."""
+    """Run the interactive sign-in flow.
+
+    On success the resulting StringSession is persisted to disk. If a
+    legacy SQLite session exists and is already authorized, it migrates
+    transparently and no code prompt is shown.
+    """
     if config.phone is None:
         return Failure(MissingPhone())
 
-    client = _make_client(config)
+    initial = load_session_string(config.session_path)
+    client = _make_client(config, initial)
     await client.connect()
     try:
         if await client.is_user_authorized():
+            save_session_string(config.session_path, client.session.save())
             me = await client.get_me()
             match wire.to_peer(me):
                 case Success(peer):
@@ -104,6 +122,7 @@ async def login(config: Config, io: PromptIO) -> Result[Identity, LoginError]:
             except BaseException:  # noqa: BLE001
                 return Failure(TwoFactorFailed())
 
+        save_session_string(config.session_path, client.session.save())
         me = await client.get_me()
         match wire.to_peer(me):
             case Success(peer):
